@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  username          String    @unique @db.VarChar(255)
+  password          String
+  first_name        String
+  last_name         String
+  dp                String?
+  posts             Post[]
+  follwers          User[]    @relation("user_followers")
+  following         User[]    @relation("user_followers")
+  sent_messages     Message[] @relation("sent_by")
+  received_messages Message[] @relation("received_by")
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  content   String
+  img_url   String?
+  timestamp DateTime  @default(now())
+  user      User      @relation(references: [id], fields: [user_id])
+  user_id   Int
+  comments  Comment[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  timestamp DateTime @default(now())
+  post      Post     @relation(references: [id], fields: [post_id])
+  post_id   Int
+  replies   Reply[]
+}
+
+model Reply {
+  id         Int      @id @default(autoincrement())
+  content    String
+  timestamp  DateTime @default(now())
+  comment    Comment  @relation(references: [id], fields: [comment_id])
+  comment_id Int
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  content     String
+  timestamp   DateTime @default(now())
+  sender      User     @relation("sent_by", references: [id], fields: [sender_id])
+  sender_id   Int
+  receiver    User     @relation("received_by", references: [id], fields: [receiver_id])
+  receiver_id Int
+}
