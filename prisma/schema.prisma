@@ -20,11 +20,19 @@ model User {
   first_name        String
   last_name         String
   dp                String?
-  posts             Post[]
+  posts             Post[]    @relation("author")
   follwers          User[]    @relation("user_followers")
   following         User[]    @relation("user_followers")
   sent_messages     Message[] @relation("sent_by")
   received_messages Message[] @relation("received_by")
+  liked_posts       Post[]    @relation("user_liked_posts")
+  liked_comments    Comment[] @relation("user_liked_comments")
+  liked_replies     Reply[]   @relation("user_liked_replies")
+  disliked_posts    Post[]    @relation("user_disliked_posts")
+  disliked_comments Comment[] @relation("user_disliked_comments")
+  disliked_replies  Reply[]   @relation("user_disliked_replies")
+  comments          Comment[] @relation("author")
+  replies           Reply[]   @relation("author")
 }
 
 model Post {
@@ -32,9 +40,11 @@ model Post {
   content   String
   img_url   String?
   timestamp DateTime  @default(now())
-  user      User      @relation(references: [id], fields: [user_id])
+  user      User      @relation("author", references: [id], fields: [user_id])
   user_id   Int
   comments  Comment[]
+  likes     User[]    @relation("user_liked_posts")
+  dislikes  User[]    @relation("user_disliked_posts")
 }
 
 model Comment {
@@ -43,7 +53,11 @@ model Comment {
   timestamp DateTime @default(now())
   post      Post     @relation(references: [id], fields: [post_id])
   post_id   Int
+  user      User     @relation("author", references: [id], fields: [user_id])
+  user_id   Int
   replies   Reply[]
+  likes     User[]   @relation("user_liked_comments")
+  dislikes  User[]   @relation("user_disliked_comments")
 }
 
 model Reply {
@@ -52,6 +66,10 @@ model Reply {
   timestamp  DateTime @default(now())
   comment    Comment  @relation(references: [id], fields: [comment_id])
   comment_id Int
+  user       User     @relation("author", references: [id], fields: [user_id])
+  user_id    Int
+  likes      User[]   @relation("user_liked_replies")
+  dislikes   User[]   @relation("user_disliked_replies")
 }
 
 model Message {
