@@ -17,6 +17,26 @@ const followUser = async (req, res) => {
   res.sendStatus(201);
 };
 
+const getAuthenticatedUser = async (req, res) => {
+  res.json({
+    id: req.user.id,
+    username: req.user.username,
+    first_name: req.user.first_name,
+    last_name: req.user.last_name,
+    dp: req.user.dp,
+  });
+};
+
+const deAuthenticateUser = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.PROD ? true : false,
+    sameSite: process.env.PROD ? "none" : "lax",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
+  res.json({ msg: "Logged Out Successfully!" });
+};
+
 const unfollowUser = async (req, res) => {
   const { userId, followerId } = req.params;
   await prisma.user.update({
@@ -62,4 +82,6 @@ module.exports = {
   unfollowUser,
   getFollowing,
   getFollowingHelper,
+  getAuthenticatedUser,
+  deAuthenticateUser,
 };
