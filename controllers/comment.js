@@ -1,8 +1,6 @@
 const { prisma } = require("../lib/prisma");
 
-const createComment = async (req, res) => {
-  const { postId, userId } = req.params;
-  const { content } = req.body;
+const createComment = async (postId, userId, content) => {
   await prisma.comment.create({
     data: {
       post_id: parseInt(postId),
@@ -10,7 +8,6 @@ const createComment = async (req, res) => {
       content,
     },
   });
-  res.sendStatus(201);
 };
 
 const removeCommentDislikeHelper = async (userId, commentId) => {
@@ -34,8 +31,7 @@ const removeCommentDislike = async (req, res) => {
   res.sendStatus(204);
 };
 
-const dislikeComment = async (req, res) => {
-  const { commentId, userId } = req.params;
+const dislikeComment = async (commentId, userId) => {
   await removeCommentLikeHelper(userId, commentId);
   await prisma.comment.update({
     where: {
@@ -49,7 +45,6 @@ const dislikeComment = async (req, res) => {
       },
     },
   });
-  res.sendStatus(201);
 };
 
 const removeCommentLikeHelper = async (userId, commentId) => {
@@ -73,31 +68,54 @@ const removeCommentLike = async (req, res) => {
   res.sendStatus(204);
 };
 
-const getComments = async (req, res) => {
-  const { postId } = req.params;
+const getComments = async (postId) => {
   const comments = await prisma.post.findUnique({
     where: {
       id: parseInt(postId),
     },
     select: {
       comments: {
-        select: {
-          id: true,
-          content: true,
+        include: {
           user: {
             omit: {
               password: true,
             },
           },
+          _count: {
+            select: {
+              likes: true,
+              dislikes: true,
+            },
+          },
+          replies: {
+            include: {
+              _count: {
+                select: {
+                  likes: true,
+                  dislikes: true,
+                },
+              },
+              user: {
+                omit: {
+                  password: true,
+                },
+              },
+            },
+            orderBy: {
+              id: "desc",
+            },
+          },
+        },
+        orderBy: {
+          id: "desc",
         },
       },
     },
   });
-  res.json(comments.comments);
+  return comments.comments;
 };
 
-const likeComment = async (req, res) => {
-  const { commentId, userId } = req.params;
+const likeComment = async (commentId, userId) => {
   await removeCommentDislikeHelper(userId, commentId);
   await prisma.comment.update({
     where: {
@@ -111,7 +129,6 @@ const likeComment = async (req, res) => {
       },
     },
   });
-  res.sendStatus(201);
 };
 
 const getCommentLikes = async (req, res) => {

@@ -1,8 +1,6 @@
 const { prisma } = require("../lib/prisma");
 
-const createReply = async (req, res) => {
-  const { commentId, userId } = req.params;
-  const { content } = req.body;
+const createReply = async (commentId, userId, content) => {
   await prisma.reply.create({
     data: {
       comment_id: parseInt(commentId),
@@ -10,7 +8,6 @@ const createReply = async (req, res) => {
       content,
     },
   });
-  res.sendStatus(201);
 };
 
 const removeReplyDislikeHelper = async (userId, replyId) => {
@@ -34,8 +31,7 @@ const removeReplyDislike = async (req, res) => {
   res.sendStatus(204);
 };
 
-const dislikeReply = async (req, res) => {
-  const { replyId, userId } = req.params;
+const dislikeReply = async (replyId, userId) => {
   await removeReplyLikeHelper(userId, replyId);
   await prisma.reply.update({
     where: {
@@ -49,7 +45,6 @@ const dislikeReply = async (req, res) => {
       },
     },
   });
-  res.sendStatus(201);
 };
 
 const removeReplyLikeHelper = async (userId, replyId) => {
@@ -73,17 +68,20 @@ const removeReplyLike = async (req, res) => {
   res.sendStatus(204);
 };
 
-const getreplies = async (req, res) => {
-  const { commentId } = req.params;
+const getreplies = async (commentId) => {
   const replies = await prisma.comment.findUnique({
     where: {
       id: parseInt(commentId),
     },
-    select: {
+    include: {
       replies: {
-        select: {
-          id: true,
-          content: true,
+        include: {
+          _count: {
+            select: {
+              likes: true,
+              dislikes: true,
+            },
+          },
           user: {
             omit: {
               password: true,
@@ -93,11 +91,10 @@ const getreplies = async (req, res) => {
       },
     },
   });
-  res.json(replies.replies);
+  return replies.replies;
 };
 
-const likeReply = async (req, res) => {
-  const { replyId, userId } = req.params;
+const likeReply = async (replyId, userId) => {
   await removeReplyDislikeHelper(userId, replyId);
   await prisma.reply.update({
     where: {
@@ -111,7 +108,6 @@ const likeReply = async (req, res) => {
       },
     },
   });
-  res.sendStatus(201);
 };
 
 const getReplyLikes = async (req, res) => {

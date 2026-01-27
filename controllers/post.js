@@ -43,8 +43,7 @@ const removeLikeHelper = async (userId, postId) => {
   });
 };
 
-const likePost = async (req, res) => {
-  const { postId, userId } = req.params;
+const likePost = async (userId, postId) => {
   await removeDislikeHelper(userId, postId);
   await prisma.post.update({
     where: {
@@ -58,11 +57,9 @@ const likePost = async (req, res) => {
       },
     },
   });
-  res.sendStatus(201);
 };
 
-const dislikePost = async (req, res) => {
-  const { postId, userId } = req.params;
+const dislikePost = async (userId, postId) => {
   await removeLikeHelper(userId, postId);
   await prisma.post.update({
     where: {
@@ -76,7 +73,6 @@ const dislikePost = async (req, res) => {
       },
     },
   });
-  res.sendStatus(201);
 };
 
 const getPostLikes = async (req, res) => {
@@ -125,23 +121,36 @@ const getPostDislikes = async (req, res) => {
   res.json(postLikes.dislikes.map((user) => user.id));
 };
 
-const getFollowerPosts = async (req, res) => {
-  const { id } = req.params;
+const getFollowerPosts = async (id) => {
   const followers = await getFollowingHelper(id);
+  followers.push(parseInt(id));
   const posts = await prisma.post.findMany({
     where: {
       user_id: {
         in: followers,
       },
     },
+    include: {
+      user: {
+        omit: {
+          password: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          dislikes: true,
+        },
+      },
+    },
     orderBy: {
       id: "desc",
     },
   });
-  res.json(posts);
+  return posts;
 };
 
-const getTrendingPosts = async (req, res) => {
+const getTrendingPosts = async () => {
   const posts = await prisma.post.findMany({
     where: {
       timestamp: {
@@ -149,9 +158,15 @@ const getTrendingPosts = async (req, res) => {
       },
     },
     include: {
+      user: {
+        omit: {
+          password: true,
+        },
+      },
       _count: {
         select: {
           likes: true,
+          dislikes: true,
         },
       },
     },
@@ -161,7 +176,29 @@ const getTrendingPosts = async (req, res) => {
       },
     },
   });
-  res.json(posts);
+  return posts;
+};
+
+const getFullPost = async (id) => {
+  const post = await prisma.post.findUnique({
+    where: {
+      id: parseInt(id),
+    },
+    include: {
+      _count: {
+        select: {
+          likes: true,
+          dislikes: true,
+        },
+      },
+      user: {
+        omit: {
+          password: true,
+        },
+      },
+    },
+  });
+  return post;
 };
 
 module.exports = {
@@ -169,6 +206,7 @@ module.exports = {
   getFollowerPosts,
   getTrendingPosts,
   likePost,
+  getFullPost,
   getPostLikes,
   dislikePost,
   getPostDislikes,

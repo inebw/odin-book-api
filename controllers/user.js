@@ -1,4 +1,5 @@
 const { prisma } = require("../lib/prisma");
+const { body, matchedData, validationResult } = require("express-validator");
 
 const followUser = async (req, res) => {
   const { userId, followerId } = req.params;
@@ -16,6 +17,59 @@ const followUser = async (req, res) => {
   });
   res.sendStatus(201);
 };
+
+const validateUser = [
+  body("username")
+    .trim()
+    .isLength({ min: 3, max: 255 })
+    .withMessage("Username should contain at least 3 characters")
+    .custom(async (value, { req }) => {
+      if (req.user.username == value) return true;
+      const user = await prisma.user.findUnique({ where: { username: value } });
+      if (user) throw new Error("Username already exists");
+      return true;
+    }),
+  body("first_name")
+    .trim()
+    .notEmpty()
+    .withMessage("First Name should not be empty")
+    .isAlpha()
+    .withMessage("First Name should only contin alphabets"),
+  body("last_name")
+    .trim()
+    .notEmpty()
+    .withMessage("Last Name should not be empty")
+    .isAlpha()
+    .withMessage("Last Name should only contin alphabets"),
+];
+
+const updateUser = [
+  validateUser,
+  async (req, res) => {
+    const { id } = req.params;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) res.json(errors.array());
+    else {
+      const { username, first_name, last_name } = matchedData(req);
+      const { dp } = req.body;
+
+      await prisma.user.update({
+        where: {
+          id: parseInt(id),
+        },
+        data: {
+          username,
+          first_name,
+          last_name,
+          dp: dp
+            ? dp
+            : `https://robohash.org/${username}-${first_name}-${last_name}.png`,
+        },
+      });
+      res.json({ msg: "Updated Successfully!" });
+    }
+  },
+];
 
 const getAuthenticatedUser = async (req, res) => {
   res.json({
@@ -73,15 +127,55 @@ const getFollowingHelper = async (id) => {
 
 const getFollowing = async (req, res) => {
   const { id } = req.params;
-  const following = await getFollowingHelper(id);
-  res.json(following);
+  const following = await prisma.user.findUnique({
+    where: {
+      id: parseInt(id),
+    },
+    select: {
+      following: {
+        omit: {
+          password: true,
+        },
+      },
+    },
+  });
+  res.json(following.following);
+};
+
+const getFollowers = async (req, res) => {
+  const { id } = req.params;
+  const followers = await prisma.user.findUnique({
+    where: {
+      id: parseInt(id),
+    },
+    select: {
+      follwers: {
+        omit: {
+          password: true,
+        },
+      },
+    },
+  });
+  res.json(followers.follwers);
+};
+
+const getAllUsers = async (req, res) => {
+  const users = await prisma.user.findMany({
+    omit: {
+      password: true,
+    },
+  });
+  res.json(users);
 };
 
 module.exports = {
   followUser,
   unfollowUser,
   getFollowing,
+  getFollowers,
+  getAllUsers,
   getFollowingHelper,
   getAuthenticatedUser,
   deAuthenticateUser,
+  updateUser,
 };

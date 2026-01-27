@@ -5,6 +5,9 @@ const {
   getFollowing,
   getAuthenticatedUser,
   deAuthenticateUser,
+  updateUser,
+  getFollowers,
+  getAllUsers,
 } = require("../controllers/user");
 const passport = require("passport");
 
@@ -16,8 +19,15 @@ user.get(
   getAuthenticatedUser,
 );
 user.delete("/unAuthenticate", deAuthenticateUser);
-user.post("/:userId/:followerId", followUser);
-user.delete("/:userId/:followerId", unfollowUser);
-user.get("/:id", getFollowing);
+user.get("/allUsers", getAllUsers);
+user.post(
+  "/update/:id",
+  passport.authenticate("jwt", { session: false }),
+  updateUser,
+);
+user.post("/follow/:userId/:followerId", followUser);
+user.post("/unfollow/:userId/:followerId", unfollowUser);
+user.get("/following/:id", getFollowing);
+user.get("/followers/:id", getFollowers);
 
 module.exports = user;
