@@ -17,19 +17,32 @@ const {
   likePost,
   dislikePost,
   getFullPost,
+  removeLikeHelper,
+  removeDislikeHelper,
 } = require("./controllers/post.js");
 const {
   getComments,
   createComment,
   likeComment,
   dislikeComment,
+  removeCommentLikeHelper,
+  removeCommentDislikeHelper,
 } = require("./controllers/comment.js");
 const {
   createReply,
   getreplies,
   likeReply,
   dislikeReply,
+  removeReplyLikeHelper,
+  removeReplyDislikeHelper,
 } = require("./controllers/reply.js");
+const {
+  getConnections,
+  getUser,
+  turnUserOnline,
+  turnUserOffline,
+} = require("./controllers/user.js");
+const { getChat, createChat } = require("./controllers/message.js");
 
 const allowedOrigin = ["http://localhost:5173"];
 const corsOptions = {
@@ -66,6 +79,14 @@ io.on("connection", (socket) => {
     socket.emit("receivePosts", posts);
   });
 
+  socket.on("joinRoom", (data) => {
+    socket.join(data);
+  });
+
+  socket.on("leaveRoom", (data) => {
+    socket.leave(data);
+  });
+
   socket.on("getPost", async (data) => {
     const post = await getFullPost(data);
     socket.emit("receivePost", post);
@@ -73,6 +94,16 @@ io.on("connection", (socket) => {
 
   socket.on("likePost", async (data, cb) => {
     await likePost(data.userId, data.postId);
+    cb();
+  });
+
+  socket.on("removeLikePost", async (data, cb) => {
+    await removeLikeHelper(data.userId, data.postId);
+    cb();
+  });
+
+  socket.on("removeDislikePost", async (data, cb) => {
+    await removeDislikeHelper(data.userId, data.postId);
     cb();
   });
 
@@ -96,8 +127,18 @@ io.on("connection", (socket) => {
     cb();
   });
 
+  socket.on("removeLikeComment", async (data, cb) => {
+    await removeCommentLikeHelper(data.userId, data.commentId);
+    cb();
+  });
+
   socket.on("dislikeComment", async (data, cb) => {
     await dislikeComment(data.commentId, data.userId);
+    cb();
+  });
+
+  socket.on("removeDislikeComment", async (data, cb) => {
+    await removeCommentDislikeHelper(data.userId, data.commentId);
     cb();
   });
 
@@ -116,9 +157,59 @@ io.on("connection", (socket) => {
     cb();
   });
 
+  socket.on("removeLikeReply", async (data, cb) => {
+    await removeReplyLikeHelper(data.userId, data.replyId);
+    cb();
+  });
+
   socket.on("dislikeReply", async (data, cb) => {
     await dislikeReply(data.replyId, data.userId);
     cb();
+  });
+
+  socket.on("removeDislikeReply", async (data, cb) => {
+    await removeReplyDislikeHelper(data.userId, data.replyId);
+    cb();
+  });
+
+  socket.on("getConnections", async (data) => {
+    const connections = await getConnections(data);
+    socket.emit("receiveConnections", connections);
+  });
+
+  socket.on("getUser", async (data) => {
+    const user = await getUser(data);
+    socket.emit("receiveUser", user);
+  });
+
+  socket.on("imOnline", async (data) => {
+    await turnUserOnline(data);
+    socket.broadcast.emit("updateUsers", "updateUsers");
+    socket.data.id = data;
+  });
+
+  socket.on("imOffline", async (data) => {
+    await turnUserOffline(data);
+    socket.broadcast.emit("updateUsers", "updateUsers");
+  });
+
+  socket.on("getChats", async (data) => {
+    const chats = await getChat(data.userId, data.connectionId);
+    socket.emit("receiveChats", chats);
+  });
+
+  socket.on("createChat", async (data) => {
+    await createChat(data.userId, data.connectionId, data.content);
+    const chats = await getChat(data.userId, data.connectionId);
+    socket.emit("receiveChats", chats);
+    socket
+      .to(`${data.userId}-${data.connectionId}`)
+      .emit("receiveChats", chats);
+  });
+
+  socket.on("disconnect", async () => {
+    if (socket.data.id) await turnUserOffline(socket.data.id);
+    socket.broadcast.emit("updateUsers", "updateUsers");
   });
 });
 

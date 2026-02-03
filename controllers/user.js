@@ -159,6 +159,33 @@ const getFollowers = async (req, res) => {
   res.json(followers.follwers);
 };
 
+const getConnections = async (userId) => {
+  const connections = await prisma.user.findUnique({
+    where: {
+      id: parseInt(userId),
+    },
+    include: {
+      follwers: {
+        omit: {
+          password: true,
+        },
+      },
+      following: {
+        omit: {
+          password: true,
+        },
+      },
+    },
+  });
+
+  const uniqueConnections = [
+    ...new Map(
+      [...connections.follwers, ...connections.following].map((u) => [u.id, u]),
+    ).values(),
+  ];
+  return uniqueConnections;
+};
+
 const getAllUsers = async (req, res) => {
   const users = await prisma.user.findMany({
     omit: {
@@ -168,7 +195,44 @@ const getAllUsers = async (req, res) => {
   res.json(users);
 };
 
+const turnUserOnline = async (userId) => {
+  await prisma.user.update({
+    where: {
+      id: parseInt(userId),
+    },
+    data: {
+      online: true,
+    },
+  });
+};
+
+const turnUserOffline = async (userId) => {
+  await prisma.user.update({
+    where: {
+      id: parseInt(userId),
+    },
+    data: {
+      online: false,
+    },
+  });
+};
+
+const getUser = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: parseInt(userId),
+    },
+    omit: {
+      password: true,
+    },
+  });
+  return user;
+};
+
 module.exports = {
+  getUser,
+  turnUserOnline,
+  turnUserOffline,
   followUser,
   unfollowUser,
   getFollowing,
@@ -178,4 +242,5 @@ module.exports = {
   getAuthenticatedUser,
   deAuthenticateUser,
   updateUser,
+  getConnections,
 };

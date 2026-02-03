@@ -20,6 +20,7 @@ model User {
   first_name        String
   last_name         String
   dp                String?
+  online            Boolean   @default(false)
   posts             Post[]    @relation("author")
   follwers          User[]    @relation("user_followers")
   following         User[]    @relation("user_followers")

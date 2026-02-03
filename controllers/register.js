@@ -1,6 +1,7 @@
 const { body, matchedData, validationResult } = require("express-validator");
 const { prisma } = require("../lib/prisma");
 const bcrypt = require("bcryptjs");
+const supabase = require("../config/supabase");
 
 const validateUser = [
   body("username")
@@ -37,7 +38,7 @@ const registerUser = [
   validateUser,
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) res.json(errors.array());
+    if (!errors.isEmpty()) res.status(400).json(errors.array());
     else {
       const { username, password, first_name, last_name } = matchedData(req);
       const { dp } = req.body;
@@ -54,12 +55,40 @@ const registerUser = [
             : `https://robohash.org/${username}-${first_name}-${last_name}.png`,
         },
       });
-      res.sendStatus(201);
+      setTimeout(() => {
+        res.json([
+          { msg: "Account Created Successfully! Please login to continue" },
+        ]);
+      }, 2000);
     }
   },
 ];
 
+const uploadPicture = async (req, res) => {
+  let fileLink = `https://robohash.org/f${Math.random()}-{first_name}-{last_name}.png`;
+  try {
+    const { originalname, buffer, mimetype } = req.file;
+    if (mimetype.split("/")[0] !== "image")
+      throw new Error("Please upload a valiid image");
+    const bucket = "user_uploads";
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(`${Date.now()}-${originalname}`, buffer, {
+        contentType: mimetype,
+        upsert: false,
+      });
+    if (error) throw new Error(`${error.message}`);
+
+    fileLink = supabase.storage.from(bucket).getPublicUrl(data.path)
+      .data.publicUrl;
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+  res.json({ fileLink });
+};
+
 module.exports = {
   registerUser,
   validateUser,
+  uploadPicture,
 };

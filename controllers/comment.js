@@ -85,6 +85,17 @@ const getComments = async (postId) => {
             select: {
               likes: true,
               dislikes: true,
+              replies: true,
+            },
+          },
+          likes: {
+            select: {
+              id: true,
+            },
+          },
+          dislikes: {
+            select: {
+              id: true,
             },
           },
           replies: {
@@ -93,6 +104,16 @@ const getComments = async (postId) => {
                 select: {
                   likes: true,
                   dislikes: true,
+                },
+              },
+              likes: {
+                select: {
+                  id: true,
+                },
+              },
+              dislikes: {
+                select: {
+                  id: true,
                 },
               },
               user: {
@@ -174,4 +195,6 @@ module.exports = {
   removeCommentDislike,
   dislikeComment,
   getCommentDislikes,
+  removeCommentDislikeHelper,
+  removeCommentLikeHelper,
 };

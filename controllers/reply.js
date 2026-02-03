@@ -153,4 +153,6 @@ module.exports = {
   removeReplyDislike,
   dislikeReply,
   getReplyDislikes,
+  removeReplyLikeHelper,
+  removeReplyDislikeHelper,
 };
