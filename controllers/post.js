@@ -4,14 +4,14 @@ const { getFollowingHelper } = require("./user");
 const createPost = async (req, res) => {
   const { id } = req.params;
   const { content, img_url } = req.body;
-  await prisma.post.create({
+  const post = await prisma.post.create({
     data: {
       user_id: parseInt(id),
       content,
       img_url,
     },
   });
-  res.sendStatus(201);
+  res.json({ id: post.id })
 };
 
 const removeDislikeHelper = async (userId, postId) => {
@@ -235,10 +235,47 @@ const getFullPost = async (id) => {
   return post;
 };
 
+const getUserPosts = async (userId) => {
+  const posts = await prisma.post.findMany({
+    where: {
+      user_id: parseInt(userId)
+    },
+    include: {
+      user: {
+        omit: {
+          password: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          dislikes: true,
+          comments: true,
+        },
+      },
+      likes: {
+        select: {
+          id: true,
+        },
+      },
+      dislikes: {
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: {
+      id: 'desc'
+    },
+  });
+  return posts
+}
+
 module.exports = {
   createPost,
   getFollowerPosts,
   getTrendingPosts,
+  getUserPosts,
   likePost,
   getFullPost,
   getPostLikes,

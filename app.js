@@ -19,6 +19,7 @@ const {
   getFullPost,
   removeLikeHelper,
   removeDislikeHelper,
+  getUserPosts,
 } = require("./controllers/post.js");
 const {
   getComments,
@@ -78,6 +79,11 @@ io.on("connection", (socket) => {
       : await getTrendingPosts();
     socket.emit("receivePosts", posts);
   });
+
+  socket.on('getUserPosts', async (data) => {
+    const posts = await getUserPosts(data)
+    socket.emit("receiveUserPosts", posts)
+  })
 
   socket.on("joinRoom", (data) => {
     socket.join(data);
@@ -179,7 +185,9 @@ io.on("connection", (socket) => {
 
   socket.on("getUser", async (data) => {
     const user = await getUser(data);
-    socket.emit("receiveUser", user);
+    setTimeout(() => {
+      socket.emit("receiveUser", user);
+    }, 2000)
   });
 
   socket.on("imOnline", async (data) => {

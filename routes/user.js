@@ -8,6 +8,7 @@ const {
   updateUser,
   getFollowers,
   getAllUsers,
+  getUserByUsername,
 } = require("../controllers/user");
 const passport = require("passport");
 
@@ -19,6 +20,7 @@ user.get(
   getAuthenticatedUser,
 );
 user.delete("/unAuthenticate", deAuthenticateUser);
+user.get('/username/:username', getUserByUsername)
 user.get("/allUsers", getAllUsers);
 user.post(
   "/update/:id",

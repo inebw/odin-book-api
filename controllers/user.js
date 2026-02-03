@@ -222,6 +222,18 @@ const getUser = async (userId) => {
     where: {
       id: parseInt(userId),
     },
+    include: {
+      following: {
+        select: {
+          id: true
+        }
+      },
+      follwers: {
+        select: {
+          id: true
+        }
+      }
+    },
     omit: {
       password: true,
     },
@@ -229,8 +241,30 @@ const getUser = async (userId) => {
   return user;
 };
 
+const getUserByUsername = async (req, res) => {
+  const { username } = req.params
+  const user = await prisma.user.findUnique({
+    where: {
+      username
+    },
+    include: {
+      _count: {
+        select: {
+          following: true,
+          follwers: true
+        }
+      }
+    },
+    omit: {
+      password: true
+    }
+  })
+  res.json(user)
+}
+
 module.exports = {
   getUser,
+  getUserByUsername,
   turnUserOnline,
   turnUserOffline,
   followUser,
