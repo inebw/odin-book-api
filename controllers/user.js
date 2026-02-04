@@ -66,7 +66,7 @@ const updateUser = [
             : `https://robohash.org/${username}-${first_name}-${last_name}.png`,
         },
       });
-      res.json({ msg: "Updated Successfully!" });
+      res.json([{ msg: "Account updated sucessfully" }]);
     }
   },
 ];
@@ -225,14 +225,14 @@ const getUser = async (userId) => {
     include: {
       following: {
         select: {
-          id: true
-        }
+          id: true,
+        },
       },
       follwers: {
         select: {
-          id: true
-        }
-      }
+          id: true,
+        },
+      },
     },
     omit: {
       password: true,
@@ -242,25 +242,25 @@ const getUser = async (userId) => {
 };
 
 const getUserByUsername = async (req, res) => {
-  const { username } = req.params
+  const { username } = req.params;
   const user = await prisma.user.findUnique({
     where: {
-      username
+      username,
     },
     include: {
       _count: {
         select: {
           following: true,
-          follwers: true
-        }
-      }
+          follwers: true,
+        },
+      },
     },
     omit: {
-      password: true
-    }
-  })
-  res.json(user)
-}
+      password: true,
+    },
+  });
+  res.json(user);
+};
 
 module.exports = {
   getUser,

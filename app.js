@@ -80,10 +80,10 @@ io.on("connection", (socket) => {
     socket.emit("receivePosts", posts);
   });
 
-  socket.on('getUserPosts', async (data) => {
-    const posts = await getUserPosts(data)
-    socket.emit("receiveUserPosts", posts)
-  })
+  socket.on("getUserPosts", async (data) => {
+    const posts = await getUserPosts(data);
+    socket.emit("receiveUserPosts", posts);
+  });
 
   socket.on("joinRoom", (data) => {
     socket.join(data);
@@ -185,9 +185,7 @@ io.on("connection", (socket) => {
 
   socket.on("getUser", async (data) => {
     const user = await getUser(data);
-    setTimeout(() => {
-      socket.emit("receiveUser", user);
-    }, 2000)
+    socket.emit("receiveUser", user);
   });
 
   socket.on("imOnline", async (data) => {
