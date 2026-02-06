@@ -48,7 +48,7 @@ const updateUser = [
   async (req, res) => {
     const { id } = req.params;
     const errors = validationResult(req);
-    if (!errors.isEmpty()) res.json(errors.array());
+    if (!errors.isEmpty()) res.status(400).json(errors.array());
     else {
       const { username, first_name, last_name } = matchedData(req);
       const { dp } = req.body;

@@ -8,6 +8,8 @@ const validateUser = [
     .trim()
     .isLength({ min: 3, max: 255 })
     .withMessage("Username should contain at least 3 characters")
+    .isAlphanumeric()
+    .withMessage("Username should contain only numbers and alphabets")
     .custom(async (value) => {
       const user = await prisma.user.findUnique({ where: { username: value } });
       if (user) throw new Error("Username already exists");
